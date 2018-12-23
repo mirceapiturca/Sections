@@ -1,0 +1,668 @@
+<!-- sections/quiz.liquid -->
+{%- comment -%} ---------------- THE VARIABILES ---------------- {%- endcomment -%}
+
+{%- assign content_max_width = 896 -%}
+{%- assign image_max_width = '848x' -%}
+{% include 'quiz-data' %}
+
+
+{%- comment -%} -------------------- THE CSS ------------------- {%- endcomment -%}
+
+<style>
+  .quiz-section {
+    overflow-y: hidden;
+    width: 100%;
+    position: relative;
+  }
+
+  .quiz-main {
+    clear: both;
+    overflow: hidden;
+  }
+
+  .quiz-index {
+    margin-bottom: 8px;
+  }
+
+  .quiz-header {
+    text-align: center;
+  }
+  
+  .quiz-title,
+  .quiz-subtitle {
+    margin: 0 auto 1em;
+  }
+  
+  .quiz-track {
+    display: flex;
+    position: relative;
+    top: 20px;
+    margin: -20px 0 0;
+    padding: 0;
+    list-style: none;
+    white-space: nowrap;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
+
+  @supports (scroll-snap-type: x mandatory) {
+    .quiz-track {
+      overflow-x: auto;
+      scroll-snap-align: center;
+      scroll-snap-type: x mandatory;
+      will-change: scroll-position;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  [data-scroll-animation] .quiz-panel {
+    animation: scroll 420ms backwards;
+    pointer-events: none;
+    transform: translateX(var(--scroll-x, 0px));
+  }
+    
+  @keyframes scroll {
+    0% { transform: translateX(0px) }
+    100% { transform: translateX(var(--scroll-x, 0px)) }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .quiz-track {
+      scroll-behavior: auto;
+      will-change: auto;
+    }
+
+    [data-scroll-animation] .quiz-panel {
+      animation-duration: 0s;
+    }
+  }
+  
+  .quiz-panel {
+    display: inline-block;
+    vertical-align: top;
+    width: 100%;
+    min-width: 100%;
+    padding-bottom: 20px;
+    scroll-snap-align: center;
+  }
+
+  .quiz-panel[hidden] {
+    display: none;
+  }
+  
+  .quiz-content {
+    margin: 0 auto;
+    padding-bottom: 64px;
+    white-space: initial;
+    position: relative;
+    max-width: {{ content_max_width }}px;
+  }
+
+  .quiz-answers {
+    display: flex;
+    justify-content: space-evenly;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  
+  .quiz-answer {
+    position: relative;
+    display: inline-block;
+    vertical-align: top;
+    padding: 4px 0;
+  }
+  
+  .quiz-panel-input {
+    display: block;
+    margin: 0 auto 4px;
+  }
+  
+  .quiz-panel-label {
+    display: block;
+    font-weight: 500;
+    font-size: 14px;
+    padding: 8px;
+  }
+ 
+  /* Hero */
+  .quiz-main {
+    position: relative;
+    padding: 0 24px;
+  }
+
+  .quiz-picture {
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    display: block;
+  }
+
+  .quiz-picture img {
+    display: block;
+    width: 100%;
+    margin: 0 auto 48px;
+  }
+
+  [data-image-animated],
+  [data-image-selected] {
+    width: auto;
+    height: auto;
+  }
+
+  [data-image-animated] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    animation: opacity 320ms cubic-bezier(0.4, 0.0, 0.2, 1) both reverse;
+  }
+
+  [data-image-selected][data-image-animated] {
+    position: relative;
+    width: auto;
+    height: auto;
+    animation-direction: normal;
+    z-index: 2;
+  }
+
+  [data-image-animated] ~ * {
+    pointer-events: none;
+  }
+
+  @keyframes opacity {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-image-animated] {
+      animation-duration: 0s;
+    }
+  }
+  
+  .quiz-control {
+    color: inherit;
+    text-decoration: none;
+    padding: 8px 24px;
+    margin: 0 4px;
+    display: inline-block;
+    border: 1px solid #212121;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-top: 40px;
+    font-weight: 500;
+  }
+
+  /* Results */
+  .quiz-no-results {
+    display: none;
+  }
+
+  .quiz-main:empty ~ .quiz-no-results {
+    display: block;
+  }
+
+  .quiz-product {
+    margin-bottom: 48px;
+  }
+
+  .quiz-product picture {
+    display: block;
+    margin-bottom: 16px;
+  }
+  
+  /* Settings assigned */
+  {%- for block in section.blocks -%}
+  {%- unless block.type == 'Answer' -%}
+    {%- assign type_index = block.type | split: '_' | last -%}
+  
+    {%- if block.settings.background != blank -%}
+      .quiz-panel:nth-child({{ type_index }}) {
+        background-color: {{ block.settings.background }};
+      }
+    {%- endif -%}
+
+  {%- endunless -%}
+  {%- endfor -%}
+
+  @media (min-width: 1024px) {
+    .quiz-header {
+      width: 40%;
+      float: left;
+      text-align: left;
+    }
+
+    .quiz-answers {
+      width: 60%;
+      float: left;
+    }
+  }
+
+</style>
+
+
+{%- comment -%} ------------------ THE MARKUP ------------------ {%- endcomment -%}
+
+<section class="quiz-section">
+  <ul class="quiz-track">
+    {%- assign question_index = 0 -%}
+    {%- for i in (1..5) -%}
+      {%- for block in section.blocks -%}
+
+        {%- assign type_question = 'Question_' | append: i -%}
+
+        {%- if block.type == type_question and block.settings.question_title != blank -%}
+
+          {%- assign question_index0 = question_index -%}
+          {%- assign question_index = question_index0 | plus: 1 -%}
+
+          <li class="quiz-panel" id="question-{{ question_index }}" {{ block.shopify_attributes }}>
+            <div class="quiz-content">
+
+              {%- if block.settings.image -%}
+              {%- assign img = block.settings.image -%}
+              <picture class="quiz-picture" data-question-index="{{ question_index0 }}" data-image-selected>
+                <source media="(max-width: 375px)" srcset="{{ img | img_url: '375x', crop: 'center' }}, {{ img | img_url: '375x', crop: 'center', scale: 2 }} 2x">
+                <source media="(max-width: 480px)" srcset="{{ img | img_url: '480x', crop: 'center' }}, {{ img | img_url: '480x', crop: 'center', scale: 2 }} 2x">
+                <source media="(max-width: 640px)" srcset="{{ img | img_url: '640x', crop: 'center' }}, {{ img | img_url: '640x', crop: 'center', scale: 2 }} 2x">
+                <img src="{{ img | img_url: image_max_width, crop: 'center' }}" 
+                  srcset="{{ img | img_url: image_max_width, crop: 'center' }} 1x, {{ img | img_url: image_max_width, crop: 'center', scale: 2 }}  2x" alt="{{ img.alt | escape }}">
+              </picture>
+              {%- endif -%}
+
+              {%- assign answer_inputs = '' -%}
+
+              {%- for block in section.blocks -%}
+              {%- if block.settings.title contains i -%}
+
+              {%- capture 'answer_input' -%}
+              <div class="quiz-answer" {{ block.shopify_attributes }}>
+                {%- assign answer = block.settings.answer -%}
+                {%- assign q_identifier = block.settings.title | handle -%}
+                {%- assign a_identifier = 'answer-' | append: block.id -%}
+                <input class="quiz-panel-input" type="radio" name="{{ q_identifier }}" id="{{ a_identifier }}" value="{{ a_identifier }}" data-answer-trigger>
+                <label class="quiz-panel-label" for="{{ a_identifier }}">{{ answer }}</label> 
+              </div>
+              {%- endcapture -%}
+
+              {%- if block.settings.image -%}
+              {%- assign img = block.settings.image -%}
+              {%- assign clear = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==' -%}
+              <picture class="quiz-picture" data-question-index="{{ question_index0 }}"  data-img="answer-{{ block.id }}">
+                <source media="(max-width: 375px)" srcset="{{ clear }}" data-lazy-srcset="{{ img | img_url: '375x', crop: 'center' }}, {{ img | img_url: '375x', crop: 'center', scale: 2 }} 2x">
+                <source media="(max-width: 480px)" srcset="{{ clear }}" data-lazy-srcset="{{ img | img_url: '480x', crop: 'center' }}, {{ img | img_url: '480x', crop: 'center', scale: 2 }} 2x">
+                <source media="(max-width: 640px)" srcset="{{ clear }}" data-lazy-srcset="{{ img | img_url: '640x', crop: 'center' }}, {{ img | img_url: '640x', crop: 'center', scale: 2 }} 2x">
+                <img src="{{ clear }}"  srcset="{{ clear }}"
+                  data-lazy-src="{{ img | img_url: image_max_width, crop: 'center' }}" 
+                  data-lazy-srcset="{{ img | img_url: image_max_width, crop: 'center' }} 1x, {{ img | img_url: image_max_width, crop: 'center', scale: 2 }}  2x" alt="{{ img.alt | escape }}">
+              </picture>
+              {%- endif -%}
+
+              {%- assign answer_inputs = answer_inputs | append: answer_input  -%}
+
+              {%- endif -%}
+              {%- endfor -%}
+
+              <div class="quiz-main">
+                <div class="quiz-header">
+                  <div class="quiz-index" tabindex=0>
+                    {{ 'a11y_index_html' | t: index: question_index, total: question_total }}
+                  </div>
+                  <h2 class="quiz-title" id="title-{{ question_index }}">{{ block.settings.question_title }}</h2>
+                  {%- if block.settings.subtitle != blank -%}
+                  <p class="quiz-subtitle">{{ block.settings.subtitle }}</p>
+                  {%- endif -%}
+                </div>
+
+                <div class="quiz-answers" role="group" aria-labelledby="title-{{ question_index }}">
+                  {{ answer_inputs }}
+                </div>
+              </div>
+              
+              {%- assign next_index0 = question_index0 | plus: 1 -%}
+              {%- assign prev_index0 = question_index0 | minus: 1 -%}
+              {%- assign next_index = question_index | plus: 1 -%}
+              {%- assign prev_index = question_index | minus: 1 -%}
+              {%- capture 'prev' -%}<a class="quiz-control" href="#question-{{ prev_index }}" data-quiz-index="{{ prev_index0 }}">{{ 'prev_html' | t }}</a>{%- endcapture -%}
+              {%- capture 'next' -%}<a class="quiz-control" href="#question-{{ next_index }}" data-quiz-index="{{ next_index0 }}">{{ 'next_html' | t }}</a>{%- endcapture -%}
+              {%- capture 'done' -%}<a class="quiz-control" href="#results" data-quiz-index="{{ question_total }}" data-show-results>{{ 'done_html' | t }}</a>{%- endcapture -%}
+
+              <div class="text-center">
+              {%- if question_index == 1 and question_index != question_total -%}
+                {{ next }}
+              {%- elsif question_index == 1 and question_index == question_total -%}
+                {{ done }}
+              {%- elsif question_index != question_total -%}
+                {{ prev }} {{ next }}
+              {%- else -%}
+                {{ prev }} {{ done }}
+              {%- endif -%}
+              </div>
+
+            </div>
+          </li>
+          {% break %}
+          {%- endif -%}
+    
+      {%- endfor -%}
+    {%- endfor -%}
+
+    <li class="quiz-panel text-center" id="results" hidden>
+      <div class="quiz-content">
+        <div class="quiz-header">
+          <h2 class="quiz-title">{{ 'results' | t }}</h2>
+          <a class="quiz-control" href="#question-0" data-quiz-index="0">{{ 'prev_html' | t }}</a>
+        </div>
+        <div class="quiz-main"></div>
+        <div class="quiz-no-results">{{ 'no_results' | t }}</div>
+      </div>
+    </li>
+
+  </ul>
+</section>
+
+
+{%- comment -%} ------------------ THE CONFIG ------------------ {%- endcomment -%}
+  
+<script data-quiz-config type="application/json">
+  {
+    "blocks": {{ blocks_data }},
+    "filters": {{ filters_data }},
+    "products": {{ products_data }},
+    "sectionId": {{ section.id | json }}
+  }
+</script>
+
+
+{%- comment -%} -------------------- THE JS -------------------- {%- endcomment -%}
+
+<script src="{{ 'quiz.js' | asset_url }}" async></script>
+
+
+{%- comment -%} ------------------- THE NO-JS ------------------ {%- endcomment -%}
+
+<noscript>
+  <style>.quiz-track {display: none;}</style>
+  <p>{{ 'no_js_html' | t: title: collection.title, url: collection.url }}</p>
+</noscript>
+
+
+{%- comment -%} ------------------ THE SCHEMA ------------------ {%- endcomment -%}
+
+{% schema %}
+{
+  "name": "Quiz",
+  "class": "sd-quiz",
+  "settings": [
+    {
+     "type": "collection",
+     "id": "filter_collection",
+     "label": "Quiz collection"
+    },
+    {
+      "type": "header",
+      "content": "Results layout"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "Answer",
+      "name": "Answer",
+      "settings": [
+        {
+         "type": "select",
+         "id": "title",
+         "options": [
+            { "value": "Answer for question 1", "label": "Answer for question 1" },
+            { "value": "Answer for question 2", "label": "Answer for question 2" },
+            { "value": "Answer for question 3", "label": "Answer for question 3" },
+            { "value": "Answer for question 4", "label": "Answer for question 4" },
+            { "value": "Answer for question 5", "label": "Answer for question 5" }
+          ],
+          "label": "Select question"
+        },
+        {
+          "type": "text",
+          "id": "answer",
+          "label": "Answer"
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Answer image"
+        },
+        {
+          "type": "header",
+          "content": "Type filter",
+          "info": "Select products with type"
+        },
+        {
+          "type": "text",
+          "id": "type_filter",
+          "label": "Types:",
+          "info": "comma-separated list",
+          "placeholder": "e.g. Shirt, Blouse"
+        },
+        {
+          "type": "header",
+          "content": "Tag filter",
+          "info": "Select products containing tags"
+        },
+        {
+          "type": "text",
+          "id": "tags_filter",
+          "label": "Tags:",
+          "info": "comma-separated list",
+          "placeholder": "e.g. Promo, Sale"
+        },
+        {
+          "type": "header",
+          "content": "Vendor filter",
+          "info": "Select products from vendors"
+        },
+        {
+          "type": "text",
+          "id": "vendor_filter",
+          "label": "Vendors:",
+          "info": "comma-separated list",
+          "placeholder": "e.g. Apple, Google"
+        },
+        {
+          "type": "header",
+          "content": "Price filter"
+        },
+        {
+         "type": "select",
+         "id": "price_filter_operator",
+         "options": [
+            { "value": ">", "label": "Greater than" },
+            { "value": ">=", "label": "Greater than or equal" },
+            { "value": "<", "label": "Less than" },
+            { "value": "<=", "label": "Less than or equal" },
+            { "value": "=", "label": "Equal" }
+         ],
+         "label": "Price is:"
+        },
+        {
+          "type": "text",
+          "id": "price_filter",
+          "label": "Price value:",
+          "placeholder": "e.g. 100"
+        },
+        {
+          "type": "header",
+          "content": "Option filter",
+          "info": "Select products containing option"
+        },
+        {
+          "type": "text",
+          "id": "option_filter",
+          "label": "Option name:",
+          "placeholder": "e.g. Color"
+        },
+        {
+          "type": "text",
+          "id": "option_filter_values",
+          "label": "Option values:",
+          "info": "comma-separated list",
+          "placeholder": "e.g. Red, Green, Blue"
+        }
+      ]
+    },
+    {
+      "type": "Question_1",
+      "name": "Question 1",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "text",
+          "id": "question_title",
+          "label": "Title"
+        },
+        {
+          "type": "html",
+          "id": "subtitle",
+          "label": "Subtitle"
+        },
+        {
+          "type": "color",
+          "id": "background",
+          "label": "Background color"
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Question image"
+        }
+      ]
+    },
+    {
+      "type": "Question_2",
+      "name": "Question 2",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "text",
+          "id": "question_title",
+          "label": "Title"
+        },
+        {
+          "type": "html",
+          "id": "subtitle",
+          "label": "Subtitle"
+        },
+        {
+          "type": "color",
+          "id": "background",
+          "label": "Background color"
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Question image"
+        }
+      ]
+    },
+    {
+      "type": "Question_3",
+      "name": "Question 3",
+      "limit": 1,
+      "settings": [
+        {
+         "type": "text",
+         "id": "question_title",
+         "label": "Title"
+        },
+        {
+          "type": "html",
+          "id": "subtitle",
+          "label": "Subtitle"
+        },
+        {
+          "type": "color",
+          "id": "background",
+          "label": "Background color"
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Question image"
+        }
+      ]
+    },
+    {
+      "type": "Question_4",
+      "name": "Question 4",
+      "limit": 1,
+      "settings": [
+        {
+         "type": "text",
+         "id": "question_title",
+         "label": "Title"
+        },
+        {
+          "type": "html",
+          "id": "subtitle",
+          "label": "Subtitle"
+        },
+        {
+          "type": "color",
+          "id": "background",
+          "label": "Background color"
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Question image"
+        }
+      ]
+    },
+    {
+      "type": "Question_5",
+      "name": "Question 5",
+      "limit": 1,
+      "settings": [
+        {
+         "type": "text",
+         "id": "question_title",
+         "label": "Title"
+        },
+        {
+          "type": "html",
+          "id": "subtitle",
+          "label": "Subtitle"
+        },
+        {
+          "type": "color",
+          "id": "background",
+          "label": "Background color"
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Question image"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Quiz",
+      "category": "Quiz by Sections.design",
+      "blocks": [
+      ]
+    }
+  ],
+  "locales": {
+    "en": {
+      "next_html": "Next <span class='visually-hidden'>, go to next quiz question</span>",
+      "prev_html": "Back <span class='visually-hidden'>, go to previous quiz question</span>",
+      "done_html": "Done <span class='visually-hidden'>, view quiz results</span>",
+      "results": "Results",
+      "no_results": "Sorry no results were found, please try again",
+      "no_js_html": "Unfortunatley your browser does not support JavaScript.<br> Please browse trough our <a href='{{ url }}'>{{ title }}</a> products.",
+      "a11y_index_html": "<span class='visually-hidden'>question </span>{{ index }}<span aria-hidden='true'>/</span><span class='visually-hidden'>out of </span>{{ total }}" 
+    }
+  }
+}
+{% endschema %}
