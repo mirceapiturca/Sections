@@ -194,6 +194,18 @@
   }
 
   /* Results */
+  .quiz-results {
+    padding: 24px;
+  }
+  
+  .result-picture {
+    padding: 24px;
+  }
+  
+  .result-picture img {
+    display: inline;
+  }
+  
   .quiz-no-results {
     display: none;
   }
@@ -347,12 +359,10 @@
       {%- endfor -%}
     {%- endfor -%}
 
-    <li class="quiz-panel text-center" id="results" hidden>
+    <li class="quiz-panel quiz-results text-center" id="results" hidden>
       <div class="quiz-content">
-        <div class="quiz-header">
-          <h2 class="quiz-title">{{ 'results' | t }}</h2>
-          <a class="quiz-control" href="#question-0" data-quiz-index="0">{{ 'prev_html' | t }}</a>
-        </div>
+        <h2 class="quiz-title">{{ 'results' | t }}</h2>
+        <a class="quiz-control" href="#question-0" data-quiz-index="0">{{ 'prev_html' | t }}</a>
         <div class="quiz-main"></div>
         <div class="quiz-no-results">{{ 'no_results' | t }}</div>
       </div>
@@ -398,6 +408,10 @@
      "type": "collection",
      "id": "filter_collection",
      "label": "Quiz collection"
+    },
+    {
+      "type": "header",
+      "content": "Results layout"
     }
   ],
   "blocks": [
