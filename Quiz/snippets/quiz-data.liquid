@@ -1,0 +1,92 @@
+<!-- snippets/quiz-data.liquid -->
+{%- assign collection = collections[section.settings.filter_collection] -%}
+
+{%- capture 'products_data' -%}
+{% paginate collection.products by 250 %}
+[
+{%- for product in collection.products -%}
+  {%- capture 'product_html' -%}
+  <div class="quiz-product">
+    <a href="{{ product.url }}">
+      <picture class="result-picture">
+        {%- assign img = product.featured_image-%}
+        <source media="(max-width: 375px)" srcset="{{ img | img_url: '375x' }}, {{ img | img_url: '375x', scale: 2 }} 2x">
+        <source media="(max-width: 480px)" srcset="{{ img | img_url: '480x' }}, {{ img | img_url: '480x', scale: 2 }} 2x">
+        <source media="(max-width: 640px)" srcset="{{ img | img_url: '640x' }}, {{ img | img_url: '640x', scale: 2 }} 2x">
+        <img src="{{ img | img_url: image_max_width }}" srcset="{{ img | img_url: image_max_width }} 1x, {{ img | img_url: image_max_width, scale: 2 }}  2x" alt="{{ img.alt | escape }}">
+      </picture>
+      {{ product.title }}
+    </a>
+  </div>
+  {%- endcapture -%}
+  {
+    "available": {{ product.available | json }},
+    "title": {{ product.title | json }},
+    "type": {{ product.type | downcase | remove: ' ' | split: ',' | json }},
+    "tags": {{ product.tags | json | downcase | remove: ' ' }},
+    "vendor": {{ product.vendor | json | downcase }},
+    "options": {{ product.options_with_values | json | downcase }},
+    "price": {{ product.price | divided_by: 100.0 | json }},
+    "featured_image": {{ product.featured_image | json }},
+    "url": {{ product.url | json }},
+    "html": {{ product_html | json }}
+  }{%- unless forloop.last -%},{%- endunless -%}
+{%- endfor -%}
+]
+{% endpaginate %}
+{%- endcapture -%}
+
+{%- capture 'filters_data' -%}
+{
+  {%- for block in section.blocks -%}
+    {%- if block.type == 'Answer' -%}
+    "answer-{{ block.id }}": [
+      {%- if block.settings.price_filter != blank -%}
+      { 
+        "args": [ {{ block.settings.price_filter | times: 1.0 }}, {{ block.settings.price_filter_operator | json }} ],
+        "type": "price"
+      }
+      {%- endif -%}
+      { 
+        "args": {{ block.settings.tags_filter | split: ',' | json }},
+        "type": "tag"
+      }
+      { 
+        "args": {{ block.settings.type_filter | split: ',' | json }},
+        "type": "type"
+      }
+      { 
+        "args": {{ block.settings.vendor_filter | split: ',' | json }},
+        "type": "vendor"
+      }
+      { 
+        "args": [ {{ block.settings.option_filter | json }}, {{ block.settings.option_filter_values | split: ',' | json }} ],
+        "type": "option"
+      }
+    ],
+    {%- endif -%}
+  {%- endfor -%}
+}
+{%- endcapture -%}
+{%- assign filters_data = filters_data | downcase | strip_newlines | remove: ' ' | replace: '}{', '},{' | replace: ',}', '}' -%}
+
+{%- capture 'blocks_data' -%}
+{
+{%- for block in section.blocks -%}
+  {%- if block.type == 'Answer'-%}
+    {%- assign index = block.settings.title | handle | split: '-' | last -%}
+  {%- else -%}
+    {%- assign index = block.type | split: '_' | last -%}
+  {%- endif -%}
+    "{{ block.id }}" : {{ index | minus: 1 }}
+  {%- unless forloop.last -%},{%- endunless -%}
+{%- endfor -%}
+}
+{%- endcapture -%}
+
+{%- assign question_total = 0 -%}
+{%- for block in section.blocks -%}
+  {%- if block.type != 'Answer' and block.settings.question_title != blank -%}
+    {%- assign question_total = question_total | plus: 1 -%}
+  {%- endif -%}
+{%- endfor -%}
