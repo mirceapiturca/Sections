@@ -2,7 +2,6 @@
     v0.1 (c) Mircea Piturca
     MIT License
 */
-
 (function Quiz(){
   'use strict';
 
@@ -26,17 +25,12 @@
 
     // Answer input select
     nodes.answers.map(partial(addEvent, 
-      'change', compose(UIupdateResults, filterProducts, mapFilters, selectedFilters, selectedAnswers)
-    ));
-
-    // Answer input select
-    nodes.answers.map(partial(addEvent, 
       'change', compose(UIheroUpdate, value, target)
     ));
 
     // Show results link click
     nodes.showResults.map(partial(addEvent, 
-      'click', UIshowResults
+      'click', compose(UIshowResults, UIupdateResults, filterProducts, mapFilters, selectedFilters, selectedAnswers)
     ));
 
     // Next|Prev link click
