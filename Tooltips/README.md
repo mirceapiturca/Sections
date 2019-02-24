@@ -1,6 +1,6 @@
 # Shopify Tooltips Section
 
-Shopify tooltips section.
+Simple, accesibile and performant. Provide additional explanatory content and showcase product features. 
 For demo and aditional info please see https://sections.design/blogs/shopify/product-tooltips
 
 ## Demo
