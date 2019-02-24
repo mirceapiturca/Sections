@@ -15,7 +15,7 @@ Copy sssets/tooltips.js to your theme assets folder.
 
 ## Authors
 
-* **Mircea Piturca** - [Sections.Design](https://github.com/mirceapiturca/Sections)
+* **Mircea Piturca** - [Sections.Design](https://sections.design)
 
 ## License
 
