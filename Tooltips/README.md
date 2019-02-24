@@ -10,7 +10,7 @@ https://sections.design/blogs/shopify/product-tooltips#shopify-section-tooltips
 
 ```
 Copy sections/tooltips.liquid to your theme sections folder.
-Copy sssets/tooltips.js to your theme assets folder.
+Copy assets/tooltips.js to your theme assets folder.
 ```
 
 ## Authors
