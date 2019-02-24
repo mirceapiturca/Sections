@@ -13,7 +13,7 @@ Add assets/quiz.js to your theme assets folder.
 
 ## Authors
 
-* **Mircea Piturca** - [Sections.Design](hhttps://github.com/mirceapiturca/Sections)
+* **Mircea Piturca** - [Sections.Design](https://github.com/mirceapiturca/Sections)
 
 ## License
 
