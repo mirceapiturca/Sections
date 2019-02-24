@@ -279,7 +279,7 @@
   <script data-tooltips-config type="application/json">
    {
      "breakpoint": {{ section.settings.breakpoint }},
-     "sectionId": {{ section.id }},
+     "sectionId": {{ section.id | json }},
      "blocksId": {{ section.blocks | map: 'id' | json }}
    }
   </script>
