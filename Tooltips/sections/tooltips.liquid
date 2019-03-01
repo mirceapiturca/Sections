@@ -83,15 +83,19 @@
   }
   {%- endfor -%}
   
+  .tooltip-item .tooltip-overlay:empty {
+    animation: none;
+  }
+  
   [aria-expanded="true"] ~ .tooltip-overlay {
-    animation: tooltip 200ms both cubic-bezier(0.4, 0, 0.2, 1);
+    animation: tooltip-expand 200ms both cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   [aria-expanded="false"] ~ .tooltip-overlay {
-    animation: tooltip-collapse 200ms both cubic-bezier(0.4, 0, 0.2, 1);
+    animation: tooltip-collapse 180ms both cubic-bezier(0.4, 0, 0.2, 1);
   }
-
-  @keyframes tooltip {
+  
+  @keyframes tooltip-expand {
     0% { height: var(--start-h) }
     100% { height: var(--end-h) }
   }
@@ -171,6 +175,24 @@
       display: block;
     }
     
+    [aria-expanded="true"] ~ .tooltip-overlay {
+      animation: tooltip-expand-large 200ms both cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [aria-expanded="false"] ~ .tooltip-overlay {
+      animation: tooltip-collapse-large 180ms both cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    @keyframes tooltip-expand-large {
+      0% { opacity: 0; transform: scale(.2, .2); }
+      100% { opacity: 1; transform: scale(1, 1); }
+    }
+    
+    @keyframes tooltip-collapse-large {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    
     {%- for block in section.blocks -%}
       {%- assign y = block.settings.top | divided_by: image_aspect_ratio -%}
       {%- assign tooltip_selector = '#tooltip-' | append: block.id -%}
@@ -191,16 +213,7 @@
         margin-top: 0;
       }
     {%- endfor -%}
-    
-     @keyframes tooltip {
-      0% { opacity: 0; transform: scale(.2, .2); }
-      100% { opacity: 1; transform: scale(1, 1); }
-    }
-    
-    @keyframes tooltip-collapse {
-      0% { opacity: 1; }
-      100% { opacity: 0; }
-    }
+ 
   }
 </style>
 
@@ -390,7 +403,7 @@
         {
           "type": "text",
           "id": "title",
-          "label": "Tooltip title",
+          "label": "Tooltip",
           "default": "Tooltip title"
         },
         {
