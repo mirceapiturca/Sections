@@ -71,50 +71,31 @@
   }
 
   function expand(tooltip) {
-    expandSet(tooltip);
-    expandAnimate(tooltip)
-
-    return tooltip;
-  }
-
-  function expandSet(tooltip) {
     tooltip.overlay.innerHTML = tooltip.markup.textContent;
-    tooltip.trigger.setAttribute('aria-expanded', true);
-
-    return tooltip;
-  }
-
-  function expandAnimate(tooltip) {
-    if (!support.customProperties) return;
-
     tooltip.overlay.style.setProperty('--end-h', height(tooltip));
     tooltip.overlay.style.setProperty('--start-h', '0px');
+    tooltip.trigger.setAttribute('aria-expanded', true);
 
-    tooltip.overlay.addEventListener('animationend', function animationEndFn() {
+     tooltip.overlay.addEventListener('animationend', function animationEndFn() {
       animationReset(tooltip.overlay, animationEndFn);
     });
+
+    return tooltip;
   }
 
   function collapse(tooltip) {
-    support.customProperties ? collapseAnimate(tooltip) : setCollapse(tooltip);
-
-    return tooltip;
-  }
-
-  function collapseAnimate(tooltip) {
-    tooltip.trigger.setAttribute('aria-expanded', false);
     tooltip.overlay.style.setProperty('--start-h',  height(tooltip));
     tooltip.overlay.style.setProperty('--end-h', '0px');
+    tooltip.trigger.setAttribute('aria-expanded', false);
+    
+    if (!support.customProperties) tooltip.overlay.innerHTML = '';
 
     tooltip.overlay.addEventListener('animationend', function animationEndFn() {
       animationReset(tooltip.overlay, animationEndFn);
-      collapseSet(tooltip);
+      tooltip.overlay.innerHTML = '';
     });
-  }
 
-  function collapseSet(tooltip) {
-    tooltip.overlay.innerHTML = '';
-    tooltip.trigger.setAttribute('aria-expanded', false);
+    return tooltip;
   }
 
   function animationReset(element, callback) {
@@ -131,7 +112,7 @@
   }
 
   function height(tooltip) {
-    return px(tooltip.overlay.offsetHeight);
+    return px(tooltip.overlay.offsetHeight.toString());
   }
 
   function px(n) {
