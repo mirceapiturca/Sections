@@ -66,8 +66,9 @@
     display: none;
   }
   
-  {{ section_selector }} .tooltip-button:focus .tooltip-index {
-    box-shadow: 0 0 0 0.16rem {{ section.settings.tooltip_focus_color }};
+  {{ section_selector }} .tooltip-button:focus .tooltip-index,
+  {{ section_selector }} .tooltip-button[aria-expanded="true"] .tooltip-index {
+    box-shadow: 0 0 0 2px {{ section.settings.tooltip_focus_color }};
   }
   
   {{ section_selector }} .tooltip-index {
