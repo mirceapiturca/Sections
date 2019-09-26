@@ -1,0 +1,390 @@
+<!-- sections/faq.liquid --> 
+{%- comment -%} ---------------- THE CSS ---------------- {%- endcomment -%}
+
+<style>
+  .collapsible__title {
+    display: block;
+    margin: 0;
+    padding: .6em 0;
+    cursor: pointer;
+    border-bottom: 1px solid {{ section.settings.border_color }};
+  }
+  
+  .collapsible__title:first-child {
+    border-top: 1px solid {{ section.settings.border_color }};
+  }
+  
+  .collapsible__button {
+    all: inherit;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+    padding: 0 0 0 1em;
+    position: relative;
+  }
+  
+  .collapsible__button span,
+  .collapsible__button svg {
+    vertical-align: middle;
+  }
+  
+  .collapsible-icon {
+    width: 0.6em;
+    height: 0.6em;
+    margin-right: .6em;
+  }
+  
+  .collapsible-icon-minus {
+    transition: transform 240ms cubic-bezier(0.4, 0.0, 0.2, 1);
+    transform-origin: 50% 50%;
+  }
+  
+  .collapsible__button[aria-expanded="true"] .collapsible-icon-minus {
+    transform: rotate(90deg);
+  }
+  
+  .collapsible__panel {
+    overflow: hidden;
+    border-bottom: 1px solid {{ section.settings.border_color }};
+    {%- if section.settings.panel_color  -%}
+    background-color: {{ section.settings.panel_color }};
+    {%- endif -%}
+  }
+  
+  .collapsible__panel p {
+    margin-top: 0;
+  }
+  
+  .collapsible__panel[data-is-animating] {
+    display: block!important;
+  }
+  
+  .collapsible-wrap {
+    padding: 1em;
+  }
+  
+</style>
+
+
+{%- comment -%} ---------------- THE MARKUP ---------------- {%- endcomment -%}
+
+<div>
+  {%- for block in section.blocks -%}
+  {%- if block.settings.title != blank and block.settings.content != blank  -%}
+  
+    {%- if block.settings.checkbox_expanded == true -%}
+      {%- assign expanded = 'true' -%}
+      {%- assign hidden = '' -%}
+    {%- else -%}
+      {%- assign expanded = 'false' -%}
+      {%- assign hidden = 'hidden' -%}
+    {%- endif -%}
+  
+    <h2 class="collapsible__title" data-faq-trigger="{{ block.id }}" {{ block.shopify_attributes }}>
+      <button class="collapsible__button" data-faq-button="{{ block.id }}" aria-expanded="{{ expanded }}">
+        <svg class="collapsible-icon" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path class="collapsible-icon-minus" fill="currentColor" d="M8 0v14H6V0z"></path>
+          <path fill="currentColor" d="M0 6h14v2H0z"></path>
+        </svg><span>{{ block.settings.title }}</span>
+      </button>
+    </h2>
+  
+    <div class="collapsible__panel" data-faq-panel="{{ block.id }}" {{ hidden }}>
+      <div class="collapsible-wrap">{{ block.settings.content }}</div>
+    </div>
+  
+  {%- endif -%}
+  {%- endfor -%}
+</div>
+
+
+{%- comment -%} -------------- THE RICH SCHEMA ------------- {%- endcomment -%}
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+  {%- for block in section.blocks -%}
+  {%- if block.settings.title != blank and block.settings.content != blank  -%}
+  {
+    "@type": "Question",
+    "name": {{ block.settings.title | json }},
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": {{ block.settings.content | json }}
+    }
+  }{%- unless forloop.last -%},{%- endunless -%}
+  {%- endif -%}
+  {%- endfor -%}
+  ]
+}
+</script>
+
+
+{%- comment -%} ---------------- THE CONFIG ---------------- {%- endcomment -%}
+
+<script type="application/json" data-faq-config="{{ section.id }}" >
+ {
+   "sectionId": {{ section.id }},
+   "blockIds": {{ section.blocks | map: 'id' | json }}
+ }
+</script>
+
+
+{%- comment -%} ---------------- THE SETTINGS ---------------- {%- endcomment -%}
+
+{% schema %}
+{
+  "name": "FAQ",
+  "class": "sd-faq",
+  "tag": "section",
+
+  "settings": [
+    {
+      "type": "color",
+      "id": "border_color",
+      "label": "Border color",
+      "default": "#eeeeee"
+    },
+    {
+      "type": "color",
+      "id": "panel_color",
+      "label": "Panel color"
+    }
+  ],
+
+  "blocks": [
+    {
+      "type": "faq",
+      "name": "FAQ",
+      "settings": [
+        {
+          "type": "checkbox",
+          "id": "checkbox_expanded",
+          "default": false,
+          "label": "Expanded?"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "FAQ title",
+          "default": "FAQ title"
+        },
+        {
+          "type": "richtext",
+          "id": "content",
+          "label": "FAQ content",
+          "default": "<p>FAQ content</p>"
+        }
+      ]
+    }
+  ],
+
+  "presets": [
+    {
+      "name": "FAQ"
+    }
+  ]
+}
+{% endschema %}
+
+{%- comment -%} ------------------ THE JS ----------------- {%- endcomment -%}
+
+{% javascript %}
+
+(function FAQ(SD) {
+  'use strict';
+  
+  var support = getSupport();
+  var sectionsIds = getSectionIds('data-faq-config');
+  var sectionInit = compose(publicAPI, setEvents, getBlocks, getConfig);
+  var sections = sectionsIds.map(sectionInit);
+
+  SD.faq = zipObj(sectionsIds, sections);
+
+  function publicAPI(config) {
+    return {
+      id: config.sectionId,
+      config: config,
+      blocks: zipObj(config.blockIds, config.blocks),
+      init: sectionInit
+    }
+  }
+
+  //**************************
+
+
+  function blockEvents(block) {
+    block.trigger.addEventListener('click', function triggerClick() { toggle(block) });
+  }
+
+  function toggle(block) {
+    block.collapsed ? expand(block) : collapse(block);
+  }
+  
+  function expand(block) {
+    block.button.setAttribute('aria-expanded', true);
+    block.panel.removeAttribute('hidden');
+    animate(block.panel, 'normal');
+    return block;
+  }
+  
+  function collapse(block) {
+    block.button.setAttribute('aria-expanded', false);
+    block.panel.setAttribute('hidden', '');
+    animate(block.panel, 'reverse');
+    return block;
+  }
+  
+  function isCollapsed(block) {
+    return (attr('aria-expanded', block.button) === 'false');
+  }
+
+  function animate(element, direction) { 
+    if (!support.WebAnimations) return;
+
+    element.setAttribute('data-is-animating', true);
+
+    element.animate([
+      { height: 0 },
+      { height: element.offsetHeight + 'px' }],
+
+      { duration: 240,
+        fill: 'both',
+        easing: 'cubic-bezier(0.4, 0.0, 0.2, 1)',
+        direction: direction
+      }
+
+    ).onfinish = function() {
+      element.removeAttribute('data-is-animating');
+      this.cancel();
+    };
+  }
+
+  //**************************
+
+
+  function getBlocks(config) {
+    config.blocks = config.blockIds.map(block);
+    return config;
+  }
+
+  function block(blockId) {
+    return {
+      trigger: document.querySelector('[data-faq-trigger="' + blockId + '"]'),
+      button: document.querySelector('[data-faq-button="' + blockId + '"]'),
+      panel: document.querySelector('[data-faq-panel="' + blockId + '"]'),
+
+      get collapsed() { return isCollapsed(this) },
+      select: function select() { return expand(this) },
+      deselect: function deselect() { return collapse(this) }
+    }
+  }
+
+  function setEvents(config) {
+    config.blocks.forEach(blockEvents);
+    return config;
+  }
+
+  function getSectionIds(sectionAttr) {
+    var sectionConfigAttr = ['[',sectionAttr,']'].join('');
+
+    return nodeList(sectionConfigAttr).map(
+      function sectionId(element) {
+        return element.getAttribute(sectionAttr);
+      }
+    );
+  }
+
+  function getConfig(sectionId) {
+    return JSON.parse(document.querySelector('[data-faq-config="' + sectionId + '"]').innerHTML);
+  }
+
+  //**************************
+
+  
+  function nodeList(str, root) {
+    if (!root) root = document;
+    var nodeList = root.querySelectorAll(str);
+    return Array.prototype.slice.call(nodeList);
+  }
+  
+  function attr(str, element) {
+    return element.getAttribute(str);
+  }
+
+  function zipObj(keys, values) {
+    return keys.reduce(
+      function zipObj(acc, key, idx) {
+        acc[key] = values[idx];
+        return acc;
+      }, {}
+    )
+  }
+
+  function compose() {
+    var funcs = Array.prototype.slice.call(arguments).reverse();
+    return function() {
+      return funcs.slice(1).reduce(function(res, fn) {
+        return fn(res);
+      }, funcs[0].apply(undefined, arguments));
+    };
+  }
+
+  function getSupport() {
+    return {
+      WebAnimations: (typeof Element.prototype.animate === 'function')
+    }
+  }
+  
+})(window.SectionsDesign = window.SectionsDesign || {})
+
+{% endjavascript %}
+
+
+{%- comment -%} ---------------- THE NO-JS ---------------- {%- endcomment -%}
+
+<noscript>
+  <style>
+    #shopify-section-{{ section.id }} [hidden] {
+      display: block;
+    }
+  </style>
+</noscript>
+
+
+{%- comment -%} ---------------- THE EDITOR ------------------ {%- endcomment -%}
+
+{%- if section.blocks[0].shopify_attributes != blank -%}
+<script>
+  (function FAQThemeEditor(SD) {
+    'use strict';
+    
+    document.addEventListener('shopify:section:load', sectionLoad);
+    document.addEventListener('shopify:block:select', blockToggle);
+    document.addEventListener('shopify:block:deselect', blockToggle);
+    
+    function sectionLoad(evt) {
+      var sectionId = evt.detail.sectionId;
+      var section =  SD.faq[sectionId];
+      if (!section) return;
+
+      SD.faq[sectionId] = section.init(sectionId);     
+    }
+    
+    function blockToggle(evt) {
+      var section = SD.faq[evt.detail.sectionId];
+      if (!section) return;
+      
+      var block = section.blocks[evt.detail.blockId];
+      if (!block) return;
+      
+      (evt.type === 'shopify:block:select')
+      ? block.select() 
+      : block.deselect()
+    }
+      
+  })(window.SectionsDesign = window.SectionsDesign || {});
+</script>
+{%- endif -%}
