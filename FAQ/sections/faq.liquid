@@ -124,7 +124,7 @@
 
 <script type="application/json" data-faq-config="{{ section.id }}" >
  {
-   "sectionId": {{ section.id }},
+   "sectionId": {{ section.id | json }},
    "blockIds": {{ section.blocks | map: 'id' | json }}
  }
 </script>
