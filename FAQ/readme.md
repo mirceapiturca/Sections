@@ -9,7 +9,7 @@ https://sections.design/blogs/shopify/faq-rich-snippets-section#shopify-section-
 ```
 Copy sections/faq.liquid to your theme sections folder.
 Copy assets/faq.js to your theme assets folder.
-Install as a regular Shopify section trough the Theme Editor
+Install as a regular Shopify section through the Theme Editor
 ```
 
 ## Authors
