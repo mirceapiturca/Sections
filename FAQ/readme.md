@@ -2,7 +2,7 @@
 
 
 ## Demo
-https://sections.design/blogs/shopify/faq-rich-snippets-section#shopify-section-faq
+https://sections.design/blogs/shopify/faq-rich-snippets-section#demo
 
 ### Installing
 
