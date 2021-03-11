@@ -1,36 +1,55 @@
 {%- comment -%} ---------------- THE CSS ---------------- {%- endcomment -%}
 
-<style>
-  .faq-title {
-    display: block;
-    margin: 0;
-    padding: .6em 0;
-    cursor: pointer;
-    border-bottom: 1px solid {{ section.settings.border_color }};
+{%- assign id = '#shopify-section-' | append: section.id -%}
+
+{% style %}
+  {{ id }} {
+    background: {{ section.settings.background_color }};
+    --panel-bg: {{ section.settings.panel_color }};
+    --border-color: {{ section.settings.border_color }}; 
+    --question-color: {{ section.settings.q_color }};
+    --answer-color: {{ section.settings.a_color }};
+
+    {%- assign min = section.settings.q_size_small -%}
+    {%- assign max = section.settings.q_size_large -%}
+    {%- assign min_rem = min | append: 'rem' -%}
+    {%- assign max_rem = max | append: 'rem' -%}
+    --title-font-size: clamp(
+		{{ min_rem }}, 
+		calc({{ min_rem }} + ({{ max }} - {{ min }}) * ((100vw - 25rem) / (64 - 25))), 
+		{{ max_rem }});
   }
-  
-  .faq-title:first-child {
-    border-top: 1px solid {{ section.settings.border_color }};
+{% endstyle %}
+
+<style>
+  .flex { display: flex }
+  .items-center { align-items: center }
+  .justify-between { justify-content: space-between }
+  .w-full { width: 100% }
+  .text-left { text-align: left }
+  .m-0 { margin: 0 }
+  .p-0 { padding: 0 }
+  .p-4 { padding: 1rem }
+  .overflow-hidden { overflow: hidden }
+  .cursor-pointer { cursor: pointer }
+
+  .faq-title {
+    border-bottom: 1px solid  var(--border-color);
+    font-size: var(--title-font-size);
+    color: var(--question-color);
   }
   
   .faq-button {
-    all: inherit;
-    cursor: pointer;
+    font: inherit;
     background: transparent;
     border: 0;
-    padding: 0 0 0 1em;
-    position: relative;
-  }
-  
-  .faq-button span,
-  .faq-button svg {
-    vertical-align: middle;
   }
   
   .faq-icon {
-    width: 0.6em;
-    height: 0.6em;
-    margin-right: .6em;
+    width: clamp(12px, 0.65em, 20px);
+    height: clamp(12px, 0.65em, 20px);
+    min-width: clamp(12px, 0.65em, 20px);
+    margin-left: 1rem;
   }
   
   .faq-icon-minus {
@@ -43,31 +62,26 @@
   }
   
   .faq-panel {
-    overflow: hidden;
-    border-bottom: 1px solid {{ section.settings.border_color }};
-    {%- if section.settings.panel_color  -%}
-    background-color: {{ section.settings.panel_color }};
-    {%- endif -%}
+    will-change: height;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--panel-bg);
+    color: var(--answer-color);
   }
   
-  .faq-panel p {
-    margin-top: 0;
+  .faq-panel * {
+    color: inherit;
   }
   
   .faq-panel[data-is-animating] {
     display: block!important;
-  }
-  
-  .faq-wrap {
-    padding: 1em;
   }
 </style>
 
 
 {%- comment -%} ---------------- THE MARKUP ---------------- {%- endcomment -%}
 
-<div>
-  {%- for block in section.blocks -%}
+
+{%- for block in section.blocks -%}
   {%- if block.settings.title != blank and block.settings.content != blank  -%}
   
     {%- if block.settings.checkbox_expanded == true -%}
@@ -78,22 +92,22 @@
       {%- assign hidden = 'hidden' -%}
     {%- endif -%}
   
-    <h2 class="faq-title" data-faq-trigger="{{ block.id }}" {{ block.shopify_attributes }}>
-      <button class="faq-button" data-faq-button="{{ block.id }}" aria-expanded="{{ expanded }}">
+    <h2 class="faq-title m-0 p-0" data-faq-trigger="{{ block.id }}" {{ block.shopify_attributes }}>
+      <button class="faq-button flex items-center justify-between w-full text-left m-0 p-4 cursor-pointer" data-faq-button="{{ block.id }}" aria-expanded="{{ expanded }}">
+        <span>{{ block.settings.title }}</span>
         <svg class="faq-icon" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path class="faq-icon-minus" fill="currentColor" d="M8 0v14H6V0z"></path>
           <path fill="currentColor" d="M0 6h14v2H0z"></path>
-        </svg><span>{{ block.settings.title }}</span>
+        </svg>
       </button>
     </h2>
   
-    <div class="faq-panel" data-faq-panel="{{ block.id }}" {{ hidden }}>
-      <div class="faq-wrap">{{ block.settings.content }}</div>
+    <div class="faq-panel rte overflow-hidden custom-bg" data-faq-panel="{{ block.id }}" {{ hidden }}>
+      <div class="faq-wrap p-4">{{ block.settings.content }}</div>
     </div>
   
   {%- endif -%}
-  {%- endfor -%}
-</div>
+{%- endfor -%}
 
 
 {%- comment -%} -------------- THE RICH SCHEMA ------------- {%- endcomment -%}
@@ -136,9 +150,19 @@
 {
   "name": "FAQ",
   "class": "sd-faq",
-  "tag": "section",
+  "tag": "article",
 
   "settings": [
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#ffffff"
+    },
     {
       "type": "color",
       "id": "border_color",
@@ -148,7 +172,46 @@
     {
       "type": "color",
       "id": "panel_color",
-      "label": "Panel color"
+      "label": "Panel color",
+      "default": "#fdfdfd"
+    },
+    {
+      "type": "header",
+      "content": "Question"
+    },
+    {
+      "type": "range",
+      "id": "q_size_small",
+      "min": 1,
+      "max": 2,
+      "step": 0.1,
+      "unit": "rem",
+      "label": "Small devices font size",
+      "default": 1
+    },
+    {
+      "type": "range",
+      "id": "q_size_large",
+      "min": 1,
+      "max": 3,
+      "step": 0.1,
+      "unit": "rem",
+      "label": "Large devices font size",
+      "default": 1.4
+    },
+    {
+      "type": "color",
+      "id": "q_color",
+      "label": "Question text color"
+    },
+    {
+      "type": "header",
+      "content": "Answer"
+    },
+    {
+      "type": "color",
+      "id": "a_color",
+      "label": "Answer text color"
     }
   ],
 
@@ -204,7 +267,7 @@
 
 {%- comment -%} ---------------- THE EDITOR ------------------ {%- endcomment -%}
 
-{%- if section.blocks[0].shopify_attributes != blank -%}
+{%- if request.design_mode -%}
 <script>
   (function FAQThemeEditor(SD) {
     'use strict';
@@ -217,7 +280,6 @@
       var sectionId = evt.detail.sectionId;
       var section =  SD.faq[sectionId];
       if (!section) return;
-
       SD.faq[sectionId] = section.init(sectionId);     
     }
     
@@ -229,8 +291,8 @@
       if (!block) return;
       
       (evt.type === 'shopify:block:select')
-      ? block.select() 
-      : block.deselect();
+        ? block.select() 
+        : block.deselect();
     }
       
   })(window.SectionsDesign = window.SectionsDesign || {});
