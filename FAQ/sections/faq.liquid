@@ -14,10 +14,7 @@
     {%- assign max = section.settings.q_size_large -%}
     {%- assign min_rem = min | append: 'rem' -%}
     {%- assign max_rem = max | append: 'rem' -%}
-    --title-font-size: clamp(
-		{{ min_rem }}, 
-		calc({{ min_rem }} + ({{ max }} - {{ min }}) * ((100vw - 25rem) / (64 - 25))), 
-		{{ max_rem }});
+    --title-font-size: clamp({{ min_rem }}, calc({{ min_rem }} + ({{ max }} - {{ min }}) * ((100vw - 25rem) / (64 - 25))), {{ max_rem }});
   }
 {% endstyle %}
 
