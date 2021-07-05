@@ -68,11 +68,13 @@
       }
 
       function outputLogic(settings) {
-        return {
+        var data = {
           url: settings.url,
           loadType: settings.loadType,
           interactionEvents: settings.interactionEvents
         }
+        if (debug) console.log('App Optimiztion Data:', data);
+        return data;
       }
 
       function modifyCreateElement(logic) {
@@ -123,7 +125,7 @@
         var eventOptions = supportsPassive ? {passive: true} : false;
         window.addEventListener('scroll', eventFn, eventOptions);
 
-        function loadOnScroll(evt, src) {
+        function loadOnScroll(src) {
           loadScript(src);
           window.removeEventListener('scroll', eventFn, eventOptions);
         }
@@ -151,12 +153,12 @@
         var script = document.querySelector('script[type="javascript/blocked"][src="' + src + '"]');
         if (!script) return;
 
-        if (debug) console.log('Script loaded', script);
         var scriptClone = script.cloneNode(false);
         scriptClone.type = 'text/javascript';
-        scriptClone.setAttribute('data-clone-x', true);
+        scriptClone.setAttribute('data-app-optimization', true);
         script.parentNode.insertBefore(scriptClone, script);
         script.parentNode.removeChild(script);
+        if (debug) console.log('App Optimization Script Load:', scriptClone);
       }
 
       function nodeList(str) {
