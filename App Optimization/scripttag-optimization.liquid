@@ -1,0 +1,480 @@
+{%- if section.settings.enable -%}
+
+{%- liquid
+  assign page = request.page_type | split: '/' | first
+
+  assign block_key = 'block_' | append: page 
+  assign scroll_key = 'scroll_' | append: page 
+  assign interaction_key = 'interaction_' | append: page
+
+  assign arr_block = '' | split: ''
+  assign arr_scroll = '' | split: ''
+  assign arr_interaction = '' | split: '' 
+
+  for block in section.blocks
+    assign url = block.settings.url | replace: '/', '\/'
+
+    if block.settings[block_key] == true and content_for_header contains url
+      assign arr_block = block | concat: arr_block
+    endif
+
+    if block.settings[scroll_key] == true and content_for_header contains url
+      assign arr_scroll = block | concat: arr_scroll
+    endif
+
+    if block.settings[interaction_key] == true and content_for_header contains url
+      assign arr_interaction = block | concat: arr_interaction
+    endif
+  endfor
+
+  assign settings_data = arr_block | concat: arr_scroll | concat: arr_interaction | uniq | map: 'settings' | json
+-%}
+
+{%- if settings_data.size != 0 -%}
+  <!-- section/scripttag-optimization.liquid -->
+  <script>
+    (function ScriptTagOptimization() {
+      'use strict';
+
+      var supportsPassive = getPassiveSupport();
+      var page = {{ page | json }};
+      var debug = {{ section.settings.debug_enable | json }};
+
+      modifyCreateElement({{ settings_data }}.map(loadTypeFromSettings).map(eventsFromSettings).map(outputLogic));
+
+      function loadTypeFromSettings(settings) {
+        if (settings['settings_' + page]) settings.loadType = 'settings';
+        else if (settings['scroll_' + page]) settings.loadType = 'scroll';
+        else settings.loadType = 'interaction';
+        return settings;
+      }
+
+      function eventsFromSettings(settings) {
+        if (settings.loadType !== 'interaction') return settings;
+
+        settings.interactionEvents = [];
+        var selectorList = [settings.interaction_selectors_1, settings.interaction_selectors_2];
+        var eventList = [settings.interaction_event_1, settings.interaction_event_2];
+
+        selectorList.forEach(function(selector, index) {
+          if (selector.length) {
+            settings.interactionEvents.push({
+              nodes: nodeList(selector),
+              event: eventList[index]
+            });
+          }
+        });
+        return settings;
+      }
+
+      function outputLogic(settings) {
+        return {
+          url: settings.url,
+          loadType: settings.loadType,
+          interactionEvents: settings.interactionEvents
+        }
+      }
+
+      function modifyCreateElement(logic) {
+        var createElementBackup = document.createElement;
+
+        document.createElement = function() {
+          var args = Array.prototype.slice.call(arguments);
+          var node = createElementBackup.bind(document).apply(void 0, args);
+
+          // Skip if this is not a script tag
+          if (first(args).toLowerCase() !== 'script') return node;
+
+          var originalSetAttribute = node.setAttribute.bind(node);
+
+          Object.defineProperties(node, {
+            'src': {
+              get() { return node.getAttribute('src') },
+              set(src) {
+                var loadRule = getLoadRule(logic, src);
+                if (loadRule) {
+                  // Change script MIME type if script should not load
+                  originalSetAttribute('type', 'javascript/blocked');
+                  loadRule.originalUrl = src;
+                  if (loadRule.loadType === 'interaction') window.addEventListener('load', interactionLoad(loadRule), false);
+                  if (loadRule.loadType === 'scroll') window.addEventListener('load', scrollLoad(loadRule), false);
+                }
+                originalSetAttribute('src', src);
+                return true;
+              }
+            }
+          });
+          return node;
+        }
+      }
+
+      function interactionLoad(loadRule) {
+        loadRule.interactionEvents.forEach(function(interactionEvent) {
+          interactionEvent.nodes.forEach(function(node) {
+            var eventFn = partial(loadScript, loadRule.originalUrl);
+            var eventOptions = supportsPassive ? {once: true} : false;
+            node.addEventListener(interactionEvent.event, eventFn, eventOptions);
+          });
+        });
+      }
+
+      function scrollLoad(loadRule) {
+        var eventFn = partial(loadOnScroll, loadRule.originalUrl);
+        var eventOptions = supportsPassive ? {passive: true} : false;
+        window.addEventListener('scroll', eventFn, eventOptions);
+
+        function loadOnScroll(evt, src) {
+          loadScript(src);
+          window.removeEventListener('scroll', eventFn, eventOptions);
+        }
+      }
+
+      function getLoadRule(logic, src) {
+        return first(logic.filter(function(item) {
+          return stringIncludes(src, item.url);
+        }));
+      }
+
+      function getPassiveSupport() {
+        var supportsPassive = false;
+        try {
+          var opts = Object.defineProperty({}, 'passive', {
+            get: function() { supportsPassive = true; }
+          });
+          window.addEventListener('testPassive', null, opts);
+          window.removeEventListener('testPassive', null, opts);
+        } catch (e) {}
+        return supportsPassive;
+      }
+
+      function loadScript(src) {
+        var script = document.querySelector('script[type="javascript/blocked"][src="' + src + '"]');
+        if (!script) return;
+
+        if (debug) console.log('Script loaded', script);
+        var scriptClone = script.cloneNode(false);
+        scriptClone.type = 'text/javascript';
+        scriptClone.setAttribute('data-clone-x', true);
+        script.parentNode.insertBefore(scriptClone, script);
+        script.parentNode.removeChild(script);
+      }
+
+      function nodeList(str) {
+        var nodes = []
+        try { nodes = Array.prototype.slice.call(document.querySelectorAll(str));
+        } catch {};
+        return nodes;
+      }
+
+      function stringIncludes(str1, str2) {
+        return str1.indexOf(str2) != -1;
+      }
+
+      function first(arr) {
+        return arr[0];
+      }
+
+      function partial(fn) {
+        var slice = Array.prototype.slice;
+        var args = slice.call(arguments, 1);
+        return function() {
+          return fn.apply(this, args.concat(slice.call(arguments, 0)));
+        };
+      }
+    })();
+  </script>
+  {%- endif -%}
+{%- endif -%}
+
+{% schema %}
+  {
+    "name": "ScriptTag Optimiztion",
+    "settings": [
+      {
+        "type": "checkbox",
+         "id": "enable",
+         "label": "Enable ScriptTag Optimization?",
+         "default": true
+      },
+      {
+        "type": "checkbox",
+         "id": "debug_enable",
+         "label": "Enable debug?",
+         "default": true,
+         "info": "Output script loading information in console.log"
+      }
+    ],
+    "blocks": [
+      {
+        "type": "app",
+        "name": "Application",
+        "settings": [
+          {
+            "type": "text",
+            "id": "title",
+            "label": "App title"
+          },
+          {
+            "type": "text",
+            "id": "url",
+            "label": "App ScriptTag URL",
+            "placeholder": "e.g. shopifycdn.com/assets/v4/spr.js",
+            "info": "Use partial URL, e.g: shopifycdn.com/assets/v4/spr.js"
+          },
+          {
+            "type": "header",
+            "content": "Block script from loading"
+          },
+          {
+            "type": "paragraph",
+            "content": "On selected pages, the app will not be loaded"
+          },
+          {
+            "type": "checkbox",
+            "id": "block_index",
+            "label": "Index"
+          },
+          {
+            "type": "checkbox",
+            "id": "block_product",
+            "label": "Product"
+          },
+          {
+            "type": "checkbox",
+            "id": "block_collection",
+            "label": "Collection"
+          },
+           {
+            "type": "checkbox",
+            "id": "block_page",
+            "label": "Page"
+          },
+          {
+            "type": "checkbox",
+            "id": "block_blog",
+            "label": "Blog"
+          },
+          {
+            "type": "checkbox",
+            "id": "block_article",
+            "label": "Article"
+          },
+          {
+            "type": "checkbox",
+            "id": "block_cart",
+            "label": "Cart"
+          },  
+          {
+            "type": "checkbox",
+            "id": "block_search",
+            "label": "Search"
+          },        
+          {
+            "type": "checkbox",
+            "id": "block_customers",
+            "label": "Customers"
+          }, 
+          {
+            "type": "checkbox",
+            "id": "block_gift_card",
+            "label": "Gift card"
+          }, 
+          {
+            "type": "header",
+            "content": "Load script on user page scroll"
+          },
+          {
+            "type": "paragraph",
+            "content": "On selected pages, the app will start to load when the user scrolls the page."
+          },
+          {
+            "type": "checkbox",
+            "id": "scroll_index",
+            "label": "Index"
+          },
+          {
+            "type": "checkbox",
+            "id": "scroll_product",
+            "label": "Product"
+          },
+          {
+            "type": "checkbox",
+            "id": "scroll_collection",
+            "label": "Collection"
+          },
+           {
+            "type": "checkbox",
+            "id": "scroll_page",
+            "label": "Page"
+          },
+          {
+            "type": "checkbox",
+            "id": "scroll_blog",
+            "label": "Blog"
+          },
+          {
+            "type": "checkbox",
+            "id": "scroll_article",
+            "label": "Article"
+          },
+          {
+            "type": "checkbox",
+            "id": "scroll_cart",
+            "label": "Cart"
+          },  
+          {
+            "type": "checkbox",
+            "id": "scroll_search",
+            "label": "Search"
+          },        
+          {
+            "type": "checkbox",
+            "id": "scroll_customers",
+            "label": "Customers"
+          }, 
+          {
+            "type": "checkbox",
+            "id": "scroll_gift_card",
+            "label": "Gift card"
+          },
+          {
+            "type": "header",
+            "content": "Load script on user interaction"
+          },
+          {
+            "type": "paragraph",
+            "content": "On selected pages, the app will start to load when the user will trigger the assigned events."
+          },
+          {
+            "type": "checkbox",
+            "id": "interaction_index",
+            "label": "Index"
+          },
+          {
+            "type": "checkbox",
+            "id": "interaction_product",
+            "label": "Product"
+          },
+          {
+            "type": "checkbox",
+            "id": "interaction_collection",
+            "label": "Collection"
+          },
+           {
+            "type": "checkbox",
+            "id": "interaction_page",
+            "label": "Page"
+          },
+          {
+            "type": "checkbox",
+            "id": "interaction_blog",
+            "label": "Blog"
+          },
+          {
+            "type": "checkbox",
+            "id": "interaction_article",
+            "label": "Article"
+          },
+          {
+            "type": "checkbox",
+            "id": "interaction_cart",
+            "label": "Cart"
+          },  
+          {
+            "type": "checkbox",
+            "id": "interaction_search",
+            "label": "Search"
+          },        
+          {
+            "type": "checkbox",
+            "id": "interaction_customers",
+            "label": "Customers"
+          }, 
+          {
+            "type": "checkbox",
+            "id": "interaction_gift_card",
+            "label": "Gift card"
+          },
+          {
+            "type": "header",
+            "content": "User interaction event 1"
+          },
+          {
+            "type": "text",
+            "id": "interaction_selectors_1",
+            "label": "CSS selectors list",
+            "info": "Comma separated CSS selectors",
+            "placeholder": ".btn, .menu"
+          },
+          {
+            "type": "select",
+            "id": "interaction_event_1",
+            "label": "Interaction event name",
+            "options": [
+              {
+                "value": "click",
+                "label": "click"
+              },
+              {
+                "value": "mousedown",
+                "label": "mousedown"
+              },
+              {
+                "value": "mouseup",
+                "label": "mouseup"
+              },
+              {
+                "value": "focus",
+                "label": "focus"
+              }
+            ],
+            "default": "click"
+          },
+          {
+            "type": "header",
+            "content": "User interaction event 2"
+          },
+          {
+            "type": "text",
+            "id": "interaction_selectors_2",
+            "label": "CSS selectors list",
+            "info": "Comma separated CSS selectors",
+            "placeholder": ".btn, .menu"
+          },
+          {
+            "type": "select",
+            "id": "interaction_event_2",
+            "label": "Interaction event name",
+            "options": [
+              {
+                "value": "click",
+                "label": "click"
+              },
+              {
+                "value": "mousedown",
+                "label": "mousedown"
+              },
+              {
+                "value": "mouseup",
+                "label": "mouseup"
+              },
+              {
+                "value": "focus",
+                "label": "focus"
+              }
+            ],
+            "default": "click"
+          }
+        ]
+      }
+    ],
+    "presets": [
+      {
+        "name": "ScriptTag Optimiztion",
+        "category": "Performance",
+        "blocks": [
+        ]
+      }
+    ]
+  }
+{% endschema %}
