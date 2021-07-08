@@ -18,7 +18,7 @@ Configure in Theme Editor
 https://youtu.be/UFdTKDPCc_Q
 
 ### Blog post
-https://youtu.be/UFdTKDPCc_Q
+https://sections.design/blogs/shopify/app-optimization
 
 ## Authors
 
