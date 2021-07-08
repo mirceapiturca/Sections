@@ -27,20 +27,20 @@
     endif
   endfor
 
-  assign settings_data = arr_block | concat: arr_scroll | concat: arr_interaction | uniq | map: 'settings' | json
+  assign settings_data = arr_block | concat: arr_scroll | concat: arr_interaction | uniq | map: 'settings'
 -%}
 
 {%- if settings_data.size != 0 -%}
-  <!-- section/scripttag-optimization.liquid -->
+  <!-- section/app-optimization.liquid -->
   <script>
-    (function ScriptTagOptimization() {
+    (function AppOptimization() {
       'use strict';
 
       var supportsPassive = getPassiveSupport();
       var page = {{ page | json }};
       var debug = {{ section.settings.debug_enable | json }};
 
-      modifyCreateElement({{ settings_data }}.map(loadTypeFromSettings).map(eventsFromSettings).map(outputLogic));
+      modifyCreateElement({{ settings_data | json }}.map(loadTypeFromSettings).map(eventsFromSettings).map(outputLogic));
 
       function loadTypeFromSettings(settings) {
         if (settings['settings_' + page]) settings.loadType = 'settings';
@@ -79,10 +79,10 @@
 
       function modifyCreateElement(logic) {
         var createElementBackup = document.createElement;
-
+        
         document.createElement = function() {
           var args = Array.prototype.slice.call(arguments);
-          var node = createElementBackup.bind(document).apply(void 0, args);
+          var node = createElementBackup.bind(document).apply(undefined, args);
 
           // Skip if this is not a script tag
           if (first(args).toLowerCase() !== 'script') return node;
@@ -91,7 +91,9 @@
 
           Object.defineProperties(node, {
             'src': {
-              get() { return node.getAttribute('src') },
+              get() { 
+                return node.getAttribute('src') || ''
+              },
               set(src) {
                 var loadRule = getLoadRule(logic, src);
                 if (loadRule) {
@@ -188,14 +190,301 @@
   {%- endif -%}
 {%- endif -%}
 
+{%- if request.design_mode -%}
+{%- comment -%}
+  The code below will be loaded only in the Theme Editor
+{%- endcomment-%}
+{%- assign urls = content_for_header | split: 'var urls =' | last | split: 'for (var i = 0' | first | remove: ';' | split: ',' -%}
+
+<template id="sd-app-list-template">
+  <style>  
+    :host {
+      display: block;
+      contain: content;
+      padding: 3.2rem 1rem;
+      background: #f6f6f7;
+      width: 100%;
+      box-shadow: 0 0 0 1px rgb(63 63 68 / 5%), 0 1px 3px 0 rgb(63 63 68 / 15%);
+    }
+
+    .w-full { width: 100% }
+
+    .grid-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px 2px;
+    }
+
+    * {
+      font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue,sans-serif;
+      font-size: 14px;
+      color: #202223;
+      text-align: left
+    }
+
+    p {
+      padding: 0;
+      margin: 0;
+    }
+    
+    a {
+      text-decoration: none;
+    }
+    
+    table {
+      border-collapse: collapse;
+    }
+    
+    td, th {
+      padding: 16px
+    }
+    
+    th p { 
+      text-transform: uppercase;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    tr {
+      border-bottom: 1px solid #e1e3e5;
+    }
+    
+    tr:hover,
+    tr:hover td:first-child {
+      background: #fafbfb;
+    }
+    
+    a:hover {
+      text-decoration: underline;
+    }
+    
+    td:first-child,
+    th:first-child {
+      position: sticky;
+      left: 0;
+      background: #fff;
+    }
+    
+    th, th:first-child { background: #fafbfb; }
+    
+    [data-badge] {
+      background-color: #e4e5e7;
+      display: inline-block;
+      border-radius: 2rem;
+      font-size: 13px;
+      line-height: 16px;
+      padding: 3px 8px;
+    }
+    
+    [data-badge="Interaction"],
+    [data-badge="Scroll"] {
+      background-color: #aee9d1;
+    }
+    
+    [data-badge="Block"] {
+      background-color: #fed3d1;
+    }
+    
+    .card {
+      background-color: #ffffff;
+      box-shadow: rgb(23 24 24 / 5%) 0px 0px 5px 0px, rgb(0 0 0 / 15%) 0px 1px 2px 0px;
+      outline: .1rem solid transparent;
+      border-radius: 8px;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    button {
+      background: transparent;
+      border: 0;
+      cursor: pointer
+    }
+    
+    button svg {
+      display: block;
+      fill: #5C5F62;
+    }
+    
+    button:hover svg {
+      fill: #008060;
+    }
+    
+    h2 {
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 24px;
+    }
+    
+    .text-right { text-align: right }
+    .text-center { text-align: center }
+    .pr-8 { padding-right: 8px }
+    .mb-4 { margin-bottom: 4px }
+    .mb-32 { margin-bottom: 32px }
+    .flex { display: flex }
+    .whitespace-no-wrap { white-space: nowrap }
+    
+    .btn-outline {
+      padding: 9px 16px;
+      border: 1px solid rgb(140, 145, 150);
+      border-radius: 4px;
+      display: inline-block;
+      margin-top: 16px;
+      margin-left: 8px;
+      font-size: 14px;
+      line-height: 16px;
+    }
+    
+    .btn-primary {
+      background: #008060;
+      color: #fff;
+      border-color: #008060;
+    }
+    
+    .header-grid {
+      display: grid;
+      grid-template-columns: 1.7fr 1fr;
+    }
+  </style>
+
+  <div class="grid-container">
+    <div class="header-grid mb-32">
+      <div>
+        <h2 class="mb-4">App Optimization by Sections.design</h2>
+        <p>Improve performance by optimizing how, when, and where your apps will load.</p> 
+      </div>
+      <div class="text-right">
+        <a class="btn-outline text-center" href="">Read blog post</a> <a class="btn-outline btn-primary text-center" href="">View setup video</a>
+      </div>
+    </div>
+      
+	<div class="card w-full">
+      <table class="w-full">
+        <thead>
+          <tr>
+            <th><p>Application</p></th>
+            <th><p>Script URL</p></th>
+            <th><p class="text-right pr-8">{{ page }} page load</p></th>
+          </tr>
+        </thead>
+        <tbody>
+
+        {%- for url in urls -%}
+          {%- liquid
+            assign name = 'App name'
+            assign load = 'Default'
+            assign block_key = 'block_' | append: page
+            assign scroll_key = 'scroll_' | append: page
+            assign interaction_key = 'interaction_' | append: page
+
+            assign url_clean = url | remove: '"' | remove: '[' | remove: ']' | replace: '\/', '/' | replace: '\u0026', '&' | remove: 'https://' | remove: '//' | strip 
+            assign url_display = url_clean | split: '?' | first
+
+            for block in section.blocks
+              if block.settings.url != blank and url_clean contains block.settings.url
+                assign name = block.settings.title
+                if block.settings[block_key] == true
+                  assign load = 'Block'
+                elsif block.settings[scroll_key] == true
+                  assign load = 'Scroll'
+                elsif block.settings[interaction_key] == true
+                  assign load = 'Interaction'
+                endif
+              endif
+            endfor
+          -%}
+
+          <tr>
+            <td><p>{{ name }}</p></td>
+            <td>
+              <p class="flex whitespace-no-wrap">
+              	<a href="https://{{ url_clean }}" target="_blank" rel="noreferrer">{{ url_display }}</a>
+                <button type="button" data-clipboard="{{ url_display }}" >
+                  <svg aria-hidden="true" width="14" height="14" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M7.5 2A1.5 1.5 0 006 3.5V13a1 1 0 001 1h9.5a1.5 1.5 0 001.5-1.5v-9A1.5 1.5 0 0016.5 2h-9zm-4 4H4v10h10v.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 16.5v-9A1.5 1.5 0 013.5 6z"/></svg>
+                </button>
+              </p>
+            </td>
+            <td class="text-right"><p data-badge="{{ load }}">{{ load }}</p></td>
+          </tr>
+        {%- endfor -%}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</template>  
+
+<sd-app-list></sd-app-list>
+
+<script>
+  (function ThemeEditor() {
+    'use strict';       
+    
+    document.addEventListener('shopify:section:select', select);
+    document.addEventListener('shopify:section:load', load);
+    document.addEventListener('shopify:section:deselect', deselect);
+    
+    function select(evt) {
+      if (evt.detail.sectionId !== 'app-optimization') return;
+      
+      let node = document.querySelector('sd-app-list');
+      if (node) node.removeAttribute('style');
+      if (customElements.get('sd-app-list')) return;
+      defineElement();
+      initCopyEvents(node.shadowRoot);
+    }
+   
+    function load(evt) {
+      if (evt.detail.sectionId !== 'app-optimization') return;
+      
+      let shadowRoot = document.querySelector('sd-app-list').shadowRoot;
+      let nodes = Array.prototype.slice.call(shadowRoot.children);
+      nodes.forEach(node => node.parentNode.removeChild(node));
+      shadowRoot.appendChild(templateContent());
+      initCopyEvents(shadowRoot);
+    }
+  
+    function deselect(evt) {
+      if (evt.detail.sectionId !== 'app-optimization') return;
+      
+      let node = document.querySelector('sd-app-list');
+      if (node) node.style.display = 'none';
+    }
+    
+    function defineElement() {
+      customElements.define('sd-app-list',
+        class extends HTMLElement {
+          constructor() {
+            super();
+            const shadowRoot = this.attachShadow({mode: 'open'}).appendChild(templateContent());
+          }
+        }
+      );
+    }
+   
+    function templateContent() {
+      let template = document.getElementById('sd-app-list-template');
+      return template.content.cloneNode(true);
+    }
+   
+    function initCopyEvents(shadowRoot) {
+      let nodes = Array.prototype.slice.call(shadowRoot.querySelectorAll('[data-clipboard]'));
+      nodes.forEach(node => node.addEventListener('click', copyText));
+    }
+  
+    function copyText() {
+      navigator.clipboard.writeText(this.getAttribute('data-clipboard'));
+    }  
+  })();
+</script>
+{%- endif -%}
+
 {% schema %}
   {
-    "name": "ScriptTag Optimiztion",
+    "name": "App Optimiztion",
     "settings": [
       {
         "type": "checkbox",
          "id": "enable",
-         "label": "Enable ScriptTag Optimization?",
+         "label": "Enable App Optimization?",
          "default": true
       },
       {
@@ -472,7 +761,7 @@
     ],
     "presets": [
       {
-        "name": "ScriptTag Optimiztion",
+        "name": "App Optimiztion",
         "category": "Performance",
         "blocks": [
         ]
