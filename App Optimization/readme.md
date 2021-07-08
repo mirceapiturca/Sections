@@ -3,8 +3,8 @@ Optimize Shopify apps performance, loaded via the Script Tag API, by selecting h
 
 
 ## Demo
-Optimized product: https://sections.design/blogs/shopify/faq-rich-snippets-section#demo (291Kb JS initial load)<br />
-Unoptimized product: https://sections.design/blogs/shopify/faq-rich-snippets-section#demo (679Kb JS initial load)
+Optimized product: https://go-crazy-superstar.myshopify.com/products/olive-garden (291Kb JS initial load)<br />
+Unoptimized product: https://go-crazy-superstar.myshopify.com/products/olive-garden-unoptimized (679Kb JS initial load)
 
 ### Installation
 
