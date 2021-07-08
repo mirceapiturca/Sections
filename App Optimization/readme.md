@@ -14,7 +14,7 @@ Edit theme.liquid and add {% section 'app-optimization' %} before the closing </
 Configure in Theme Editor
 ```
 
-### Setup video
+### Installation and setup video
 https://youtu.be/UFdTKDPCc_Q
 
 ### Blog post
