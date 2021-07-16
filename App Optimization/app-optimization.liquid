@@ -357,7 +357,7 @@
       </div>
     </div>
       
-	<div class="card w-full">
+	  <div class="card w-full">
       <table class="w-full">
         <thead>
           <tr>
@@ -367,7 +367,6 @@
           </tr>
         </thead>
         <tbody>
-
         {%- for url in urls -%}
           {%- liquid
             assign name = 'App name'
@@ -491,7 +490,7 @@
         "type": "checkbox",
          "id": "debug_enable",
          "label": "Enable debug?",
-         "default": true,
+         "default": false,
          "info": "Output script loading information in console.log"
       }
     ],
@@ -756,14 +755,6 @@
             ],
             "default": "click"
           }
-        ]
-      }
-    ],
-    "presets": [
-      {
-        "name": "App Optimiztion",
-        "category": "Performance",
-        "blocks": [
         ]
       }
     ]
