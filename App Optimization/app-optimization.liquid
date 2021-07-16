@@ -97,6 +97,11 @@
               set(src) {
                 var loadRule = getLoadRule(logic, src);
                 if (loadRule) {
+                  // Remove app from logic once matched
+                  logic.forEach(function(item, index){
+                    if (item.url === loadRule.url) logic.splice(index, 1);
+                  });
+
                   // Change script MIME type if script should not load
                   originalSetAttribute('type', 'javascript/blocked');
                   loadRule.originalUrl = src;
@@ -155,12 +160,13 @@
         var script = document.querySelector('script[type="javascript/blocked"][src="' + src + '"]');
         if (!script) return;
 
-        var scriptClone = script.cloneNode(false);
-        scriptClone.type = 'text/javascript';
-        scriptClone.setAttribute('data-app-optimization', true);
-        script.parentNode.insertBefore(scriptClone, script);
-        script.parentNode.removeChild(script);
-        if (debug) console.log('App Optimization Script Load:', scriptClone);
+        var newScript = document.createElement('script');
+        newScript.src = script.src;
+        newScript.async = true;
+        newScript.setAttribute('data-app-optimization', true);
+        document.body.appendChild(newScript);
+
+        if (debug) console.log('App Optimization Script Load:', newScript);
       }
 
       function nodeList(str) {
