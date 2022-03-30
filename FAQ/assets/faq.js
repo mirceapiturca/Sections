@@ -1,13 +1,22 @@
-(function FAQ(SD) {
+(function FAQ(SectionsDesign) {
   'use strict';
   
+  if (SectionsDesign.faq) return;
+  SectionsDesign.faq = {};
+  
   var support = getSupport();
-  var config = getConfig();
-  var init = compose(publicAPI, setEvents, getBlocks, getConfig);
-
-  SD.faq = {}
-  SD.faq[config.sectionId] = init();
-
+ 
+  var init = function() {
+    var configNodes = Array.from(document.querySelectorAll('[data-faq-config]'));
+    
+    configNodes.map(configNode => {
+      var section = compose(publicAPI, setEvents, getBlocks, getConfig)(configNode);
+      SectionsDesign.faq[section.id] = section;
+    });
+  }
+  
+  init();
+ 
   function publicAPI(config) {
     return {
       id: config.sectionId,
@@ -26,9 +35,14 @@
    * @return {Object} Section block elements and methods.
    */
   function blockEvents(block) {
-    block.trigger.addEventListener('click', function triggerClick() {
+    if (block.trigger.hasAttribute('data-faq-init')) return block;
+    
+    block.trigger.setAttribute('data-faq-init', true);
+    block.trigger.addEventListener('click', triggerClick);
+                                   
+    function triggerClick() {
       toggle(block);
-    });
+    }
 
     return block;
   }
@@ -145,11 +159,11 @@
 
   /**
    * Pass the Liquid assigned section variabiles.
-   * @param {String} sectionId Current section ID.
+   * @param {HTMLElement} element Configuration script node.
    * @return {Object} Section and section blocks IDs.
    */
-  function getConfig() {
-    return JSON.parse(document.querySelector('[data-faq-config]').innerHTML);
+  function getConfig(node) {
+    return JSON.parse(node.innerHTML);
   }
 
   /**
