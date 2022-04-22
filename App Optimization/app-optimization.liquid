@@ -15,15 +15,15 @@
     assign url = block.settings.url | replace: '/', '\/'
     
     if content_for_header contains url or block.settings.not_an_app 
-      if block.settings[block_key] == true and header_checked
+      if block.settings[block_key] == true 
         assign arr_block = block | concat: arr_block
       endif
   
-      if block.settings[scroll_key] == true and header_checked
+      if block.settings[scroll_key] == true 
         assign arr_scroll = block | concat: arr_scroll
       endif
   
-      if block.settings[interaction_key] == true and header_checked
+      if block.settings[interaction_key] == true 
         assign arr_interaction = block | concat: arr_interaction
       endif
     endif 
