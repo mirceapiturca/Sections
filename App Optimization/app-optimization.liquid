@@ -14,23 +14,20 @@
   for block in section.blocks
     assign url = block.settings.url | replace: '/', '\/'
     
-    if content_for_header contains url or block.settings.not_an_app
-      assign header_checked = true
-    else
-      assign header_checked = false
+    if content_for_header contains url or block.settings.not_an_app 
+      if block.settings[block_key] == true and header_checked
+        assign arr_block = block | concat: arr_block
+      endif
+  
+      if block.settings[scroll_key] == true and header_checked
+        assign arr_scroll = block | concat: arr_scroll
+      endif
+  
+      if block.settings[interaction_key] == true and header_checked
+        assign arr_interaction = block | concat: arr_interaction
+      endif
     endif 
 
-    if block.settings[block_key] == true and header_checked
-      assign arr_block = block | concat: arr_block
-    endif
-
-    if block.settings[scroll_key] == true and header_checked
-      assign arr_scroll = block | concat: arr_scroll
-    endif
-
-    if block.settings[interaction_key] == true and header_checked
-      assign arr_interaction = block | concat: arr_interaction
-    endif
   endfor
 
   assign settings_data = arr_block | concat: arr_scroll | concat: arr_interaction | uniq | map: 'settings'
