@@ -13,16 +13,22 @@
 
   for block in section.blocks
     assign url = block.settings.url | replace: '/', '\/'
+    
+    if content_for_header contains url or block.settings.not_an_app
+      assign header_checked = true
+    else
+      assign header_checked = true
+    endif 
 
-    if block.settings[block_key] == true and content_for_header contains url
+    if block.settings[block_key] == true and header_checked
       assign arr_block = block | concat: arr_block
     endif
 
-    if block.settings[scroll_key] == true and content_for_header contains url
+    if block.settings[scroll_key] == true and header_checked
       assign arr_scroll = block | concat: arr_scroll
     endif
 
-    if block.settings[interaction_key] == true and content_for_header contains url
+    if block.settings[interaction_key] == true and header_checked
       assign arr_interaction = block | concat: arr_interaction
     endif
   endfor
@@ -200,7 +206,8 @@
 {%- comment -%}
   The code below will be loaded only in the Theme Editor
 {%- endcomment-%}
-{%- assign urls = content_for_header | split: 'var urls =' | last | split: 'for (var i = 0' | first | remove: ';' | split: ',' -%}
+{%- assign urls = content_for_header | split: 'var urls =' | last | split: 'for (var i = 0' | first | remove: ';'  -%}
+{%- assign urls_array = urls | split: ',' -%}
 
 <template id="sd-app-list-template">
   <style>  
@@ -373,7 +380,7 @@
           </tr>
         </thead>
         <tbody>
-        {%- for url in urls -%}
+        {%- for url in urls_array -%}
           {%- liquid
             assign name = 'App name'
             assign load = 'Default'
@@ -411,6 +418,39 @@
             <td class="text-right"><p data-badge="{{ load }}">{{ load }}</p></td>
           </tr>
         {%- endfor -%}
+        {%- capture custom_scripts -%}
+          {%- assign urls = urls | replace: '\/', '/'  -%}            
+          {%- for block in section.blocks -%}
+            {%- unless urls contains block.settings.url -%}
+              {%- liquid 
+                if block.settings[block_key] == true
+                  assign load = 'Block'
+                elsif block.settings[scroll_key] == true
+                  assign load = 'Scroll'
+                elsif block.settings[interaction_key] == true
+                  assign load = 'Interaction'
+                endif
+              -%}
+              <tr>
+                <td><p>{{ block.settings.title }}</p></td>
+                <td>
+                  <p class="flex whitespace-no-wrap">
+                    {{ block.settings.url }}
+                  </p>
+                </td>
+                <td class="text-right"><p data-badge="{{ load }}">{{ load }}</p></td>
+              </tr>                     
+            {%- endunless -%}
+          {%- endfor -%}
+        {%- endcapture -%}
+        {%- unless custom_scripts == blank %}
+          <tr>
+            <td>
+              <h4 class="mb-4">Non-App scripts</h4>
+            </td>
+          </tr>
+          {{ custom_scripts }}
+        {% endunless %}
         </tbody>
       </table>
     </div>
@@ -516,6 +556,12 @@
             "label": "App ScriptTag URL",
             "placeholder": "e.g. shopifycdn.com/assets/v4/spr.js",
             "info": "Use partial URL, e.g: shopifycdn.com/assets/v4/spr.js"
+          },
+          {
+            "type": "checkbox",
+            "id":   "not_an_app",
+            "label":  "This is not a main App script",
+            "info":   "Allows control of scripts which are not direrctly loaded via Scrip Tags"
           },
           {
             "type": "header",
