@@ -420,12 +420,15 @@
           {%- for block in section.blocks -%}
             {%- unless urls contains block.settings.url -%}
               {%- liquid 
-                if block.settings[block_key] == true
-                  assign load = 'Block'
-                elsif block.settings[scroll_key] == true
-                  assign load = 'Scroll'
-                elsif block.settings[interaction_key] == true
-                  assign load = 'Interaction'
+                assign load='Default'
+                if block.settings.not_an_app
+                  if block.settings[block_key] == true
+                    assign load = 'Block'
+                  elsif block.settings[scroll_key] == true
+                    assign load = 'Scroll'
+                  elsif block.settings[interaction_key] == true
+                    assign load = 'Interaction'
+                  endif
                 endif
               -%}
               <tr>
