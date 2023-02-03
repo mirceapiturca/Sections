@@ -15,12 +15,20 @@ Get the latest version: https://github.com/mirceapiturca/Sections/tree/master/FA
     --border-color: {{ section.settings.border_color }}; 
     --question-color: {{ section.settings.q_color }};
     --answer-color: {{ section.settings.a_color }};
+    --section-border-color: {{ section.settings.section_border_color }};
+    --section-title-color: {{ section.settings.section_title_color }};
 
     {%- assign min = section.settings.q_size_small -%}
     {%- assign max = section.settings.q_size_large -%}
     {%- assign min_rem = min | append: 'rem' -%}
     {%- assign max_rem = max | append: 'rem' -%}
     --title-font-size: clamp({{ min_rem }}, calc({{ min_rem }} + ({{ max }} - {{ min }}) * ((100vw - 25rem) / (64 - 25))), {{ max_rem }});
+    
+    {%- assign min_sc = section.settings.section_title_font_size_small -%}
+    {%- assign max_sc = section.settings.section_title_font_size_large -%}
+    {%- assign min_rem_sc = min_sc | append: 'rem' -%}
+    {%- assign max_rem_sc = max_sc | append: 'rem' -%}
+    --section-title-font-size: clamp({{ min_rem_sc }}, calc({{ min_rem_sc }} + ({{ max_sc }} - {{ min_sc }}) * ((100vw - 25rem) / (64 - 25))), {{ max_rem_sc }});
   }
 {% endstyle %}
 
@@ -45,6 +53,13 @@ Get the latest version: https://github.com/mirceapiturca/Sections/tree/master/FA
     border-bottom: 1px solid  var(--border-color);
     font-size: var(--title-font-size);
     color: var(--question-color);
+  }
+  
+  {{ id }} .faq-section-title {
+    border-bottom: 1px solid  var(--section-border-color);
+    font-size: var(--section-title-font-size);
+    color: var(--section-title-color);
+    margin: {{ section.settings.section_margin_top }}rem auto {{ section.settings.section_margin_bottom }}rem
   }
   
   {{ id }} .faq-panel {
@@ -91,7 +106,11 @@ Get the latest version: https://github.com/mirceapiturca/Sections/tree/master/FA
 
 <div class="faq-container">
 {%- for block in section.blocks -%}
-  {%- if block.settings.title != blank and block.settings.content != blank  -%}
+  {%- if block.type == 'faq-section' and block.settings.title != blank -%}
+    <h2 class="faq-section-title m-0 p-0" {{ block.shopify_attributes }}>
+      {{ block.settings.title }}
+    </h2>
+  {%- elsif block.type == 'faq' and block.settings.title != blank and block.settings.content != blank  -%}
   
     {%- if block.settings.checkbox_expanded == true -%}
       {%- assign expanded = 'true' -%}
@@ -151,7 +170,7 @@ Get the latest version: https://github.com/mirceapiturca/Sections/tree/master/FA
 <script type="application/json" data-faq-config="{{ section.id }}" >
  {
    "sectionId": {{ section.id | json }},
-   "blockIds": {{ section.blocks | map: 'id' | json }}
+   "blockIds": {{ section.blocks| where: 'type', "faq" | map: 'id' | json }}
  }
 </script>
 
@@ -264,10 +283,77 @@ Get the latest version: https://github.com/mirceapiturca/Sections/tree/master/FA
       "type": "color",
       "id": "a_color",
       "label": "Answer text color"
+    },
+    {
+      "type": "header",
+      "content": "Section Title"
+    },
+    {
+      "type": "color",
+      "id": "section_title_color",
+      "label": "Title color"
+    },
+    {
+      "type": "color",
+      "id": "section_border_color",
+      "label": "Section border color",
+      "default": "#eeeeee"
+    },
+    {
+      "type": "range",
+      "id": "section_title_font_size_small",
+      "min": 1,
+      "max": 2,
+      "step": 0.1,
+      "unit": "rem",
+      "label": "Small devices font size",
+      "default": 1
+    },
+    {
+      "type": "range",
+      "id": "section_title_font_size_large",
+      "min": 1,
+      "max": 3,
+      "step": 0.1,
+      "unit": "rem",
+      "label": "Large devices font size",
+      "default": 2.0
+    },
+    {
+      "type": "range",
+      "id": "section_margin_top",
+      "min": 0,
+      "max": 10,
+      "step": 0.1,
+      "unit": "rem",
+      "label": "Margin top",
+      "default": 3
+    },
+    {
+      "type": "range",
+      "id": "section_margin_bottom",
+      "min": 0,
+      "max": 10,
+      "step": 0.1,
+      "unit": "rem",
+      "label": "Margin bottom",
+      "default": 1
     }
   ],
 
   "blocks": [
+    {
+      "type": "faq-section",
+      "name": "Section Title",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Section title",
+          "default": "Section"
+        }
+      ]
+    },
     {
       "type": "faq",
       "name": "FAQ",
