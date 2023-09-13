@@ -135,7 +135,7 @@ Get the latest version: https://github.com/mirceapiturca/Sections/tree/master/FA
     "name": {{ block.settings.title | json }},
     "acceptedAnswer": {
       "@type": "Answer",
-      "text": {{ block.settings.content | json }}
+      "text": {{ block.settings.content | strip_html | json }}
     }
   }{%- unless forloop.last -%},{%- endunless -%}
   {%- endif -%}
